@@ -1,7 +1,8 @@
 select *
 from country_wise_latest
-where "CountryRegion" = 'Serbia' -- checking for nulls
-    -- no nulls
+LIMIT 10;
+-- checking for nulls
+-- no nulls
 select *
 from country_wise_latest
 where "CountryRegion" IS NULL
@@ -19,19 +20,6 @@ where "CountryRegion" IS NULL
     or "one_week_change" IS NULL
     or "one_week__increase" IS NULL
     or "WHO_Region" IS NULL;
-select "CountryRegion",
-    "Active",
-    "Recovered",
-    "Confirmed",
-    "Deaths"
-from country_wise_latest
-WHERE "CountryRegion" IN (
-        'United Kingdom',
-        'Netherlands',
-        'Spain',
-        'Sweden',
-        'France'
-    );
 -----------------------------------------
 select *
 from covid_19_clean_complete
@@ -39,8 +27,8 @@ limit 10;
 --  only province col has nulls
 select *
 from covid_19_clean_complete
-where "ProvinceState" is null
-    or "CountryRegion" is null
+where -- "ProvinceState" is null or
+    "CountryRegion" is null
     or "Lat" is null
     or "Long" is null
     or "Date" is null
@@ -49,61 +37,36 @@ where "ProvinceState" is null
     or "Recovered" is null
     or "Active" is null
     or "WHO_Region" is null;
-alter TABLE covid_19_clean_complete drop COLUMN "ProvinceState"
-select
-from covid_19_clean_complete -----------------------------------------
+alter TABLE covid_19_clean_complete drop COLUMN "ProvinceState";
+-----------------------------------------
 select *
 from day_wise
 limit 10;
 -- no nulls
-select *
-from day_wise
-where "Date" is null
-    or "Confirmed" is null
-    or "Deaths" is null
-    or "Recovered" is null
-    or "Active" is null
-    or "New_cases" is null
-    or "New_deaths" is null
-    or "New_recovered" is null
-    or "Deaths__100_Cases" is null
-    or "Recovered__100_Cases" is null
-    or "Deaths__100_Recovered" is null
-    or "No_of_countries" is null;
 -----------------------------------------
 select *
 from full_grouped
 limit 10;
-select *
-from full_grouped
-where "Date" is null
-    or "CountryRegion" is null
-    or "Confirmed" is null
-    or "Deaths" is null
-    or "Recovered" is null
-    or "Active" is null
-    or "New_cases" is null
-    or "New_deaths" is null
-    or "New_recovered" is null
-    or "WHO_Region" is null;
+-- no nulls
 -----------------------------------------
 select *
 from usa_county_wise
-limit 10 -- only fips or admin 2 column for these states
+limit 10;
+-- only fips or admin 2 column for these states
 select *
 from usa_county_wise
 where "UID" is null
-    or -- "iso2"is null or
-    -- "iso3"is null or
-    -- "code3"is null or
-    "FIPS" is null
-    or -- "Admin2"is null or
-    "Province_State" is null
+    or "iso2" is null
+    or "iso3" is null
+    or "code3" is null
+    or "FIPS" is null
+    or "Admin2" is null
+    or "Province_State" is null
     or "Country_Region" is null
     or "Lat" is null
     or "Long_" is null
-    or -- "Combined_Key"is null or
-    "Date" is null
+    or "Combined_Key" is null
+    or "Date" is null
     or "Confirmed" is null
     or "Deaths" is null;
 alter table usa_county_wise drop column "Admin2",
@@ -113,11 +76,12 @@ alter table usa_county_wise drop column "Admin2",
     drop COLUMN "Combined_Key";
 UPDATE usa_county_wise
 SET "FIPS" = ''
-WHERE "FIPS" IS NULL -----------------------------------------
+WHERE "FIPS" IS NULL;
+-----------------------------------------
 select *
 from worldometer_data
 limit 10;
--- new cases ,new deaths , new recovered ,total death
+-- only new cases ,new deaths , new recovered and total death have nulls
 -- they can be subed with zeros
 select *
 from worldometer_data
@@ -137,26 +101,62 @@ where "CountryRegion" is null
     or "TotalTests" is null
     or "Tests1M_pop" is null
     or "WHO_Region" is null;
-select "CountryRegion",
-    "ActiveCases",
-    "TotalRecovered",
-    "TotalCases",
-    "TotalDeaths"
-from worldometer_data
-WHERE "CountryRegion" IN ('UK', 'Netherlands', 'Spain', 'Sweden', 'France');
-select "CountryRegion",
-    "ActiveCases",
-    "TotalRecovered",
-    "TotalCases",
-    "TotalDeaths"
-FROM worldometer_data
-where "ActiveCases" is not null
-    or "TotalRecovered" is not null;
---  can't find the data of diamond princess
+--  can't find the data of diamond princess as it was a cruise ship during the pandemic and not a country
 select *
 from full_grouped
 where "CountryRegion" = 'Diamond Princess';
---  there is a total of 25 countries with an UNKNOWN who region and can't be figured out
+-- -------------------------------------------------------------------
+-- STANDRADIZING COUNTRY NAMES ACROSS THE TABLES
+UPDATE country_wise_latest
+SET "CountryRegion" = CASE
+        WHEN "CountryRegion" = 'West Bank and Gaza' THEN 'Palestine'
+        WHEN "CountryRegion" = 'Taiwan*' THEN 'Taiwan'
+    END
+WHERE "CountryRegion" IN ('West Bank and Gaza', 'Taiwan*');
+UPDATE covid_19_clean_complete
+SET "CountryRegion" = CASE
+        WHEN "CountryRegion" = 'West Bank and Gaza' THEN 'Palestine'
+        WHEN "CountryRegion" = 'Taiwan*' THEN 'Taiwan'
+    END
+WHERE "CountryRegion" IN ('West Bank and Gaza', 'Taiwan*');
+UPDATE full_grouped
+SET "CountryRegion" = CASE
+        WHEN "CountryRegion" = 'West Bank and Gaza' THEN 'Palestine'
+        WHEN "CountryRegion" = 'Taiwan*' THEN 'Taiwan'
+    END
+WHERE "CountryRegion" IN ('West Bank and Gaza', 'Taiwan*');
+UPDATE worldometer_data
+SET "CountryRegion" = CASE
+        WHEN "CountryRegion" = 'USA' THEN 'US'
+        WHEN "CountryRegion" = 'UK' THEN 'United Kingdom'
+        WHEN "CountryRegion" = 'UAE' THEN 'United Arab Emirates'
+        WHEN "CountryRegion" = 'S. Korea' THEN 'South Korea'
+        WHEN "CountryRegion" = 'CAR' THEN 'Central African Republic'
+        WHEN "CountryRegion" = 'Hong Kong' THEN 'China'
+        WHEN "CountryRegion" = 'St. Vincent Grenadines' THEN 'Saint Vincent and the Grenadines'
+        WHEN "CountryRegion" = 'Ivory Coast' THEN 'Cote d''Ivoire'
+        WHEN "CountryRegion" = 'DRC' THEN 'Congo (Kinshasa)'
+        WHEN "CountryRegion" = 'Congo' THEN 'Congo (Brazzaville)'
+        WHEN "CountryRegion" = 'Myanmar' THEN 'Burma'
+        WHEN "CountryRegion" = 'Brunei ' THEN 'Brunei'
+        WHEN "CountryRegion" = 'Vatican City' THEN 'Holy See'
+    END
+WHERE "CountryRegion" IN (
+        'USA',
+        'UK',
+        'UAE',
+        'S. Korea',
+        'CAR',
+        'Hong Kong',
+        'St. Vincent Grenadines',
+        'Ivory Coast',
+        'DRC',
+        'Congo',
+        'Myanmar',
+        'Brunei ',
+        'Vatican City'
+    );
+-- --------------------------------------------------
 update worldometer_data
 set "WHO_Region" = coalesce(
         worldometer_data."WHO_Region",
@@ -267,5 +267,5 @@ select "CountryRegion",
 from full_grouped
 group by "CountryRegion"
 ORDER by "CountryRegion";
-from Rates_And_Ranks
-WHERE "Mortality_Rank" <= 5;
+DELETE FROM worldometer_data
+WHERE worldometer_data."Continent" IS NULL
